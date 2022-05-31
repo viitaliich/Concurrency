@@ -1,13 +1,11 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <atomic>
 #include <math.h>
 
-#define NUM 1000000000
+#define NUM 100
 
-// CPU-bound
-
-// Function foo() doea some complex calculations sequentially
 size_t foo(int num)
 {
 	size_t result = 1;
@@ -23,7 +21,6 @@ size_t foo(int num)
 	return result;
 }
 
-// Function foo_c does same calculations as foo() but in 8 threads.
 int foo_c(int num)
 {
 	const int num_threads = 8;
@@ -50,13 +47,71 @@ int foo_c(int num)
 
 }
 
+int recursive_Fibonacci(int n)
+{
+	if (n == 0)
+		return 0;
+	if (n == 1)
+		return 1;
+
+	return recursive_Fibonacci(n - 1) + recursive_Fibonacci(n - 2);
+}
+
+std::atomic<int> shared_value;
+
+void recursive_Fibonacci_c(int n, int num_t)
+{
+	if (n == 0)
+	{
+		shared_value += 0; return;
+	}
+	if (n == 1)
+	{
+		shared_value += 1; return;
+	}
+	if(num_t > 0)
+	{
+		num_t-=2;
+		std::thread t1(recursive_Fibonacci_c, n - 1, num_t);
+		std::thread t2(recursive_Fibonacci_c, n - 2, num_t);
+		t1.join();
+		t2.join();
+	}
+	else
+	{
+		shared_value += recursive_Fibonacci(n - 1);
+		shared_value += recursive_Fibonacci(n - 2);
+	}
+}
+
 int main()
 {
+	int threads_num = std::thread::hardware_concurrency();
+	// Memory-bound
+
+	// Sequential Fibonacci sequence
+	const int F = 40;
+	uint64_t ms5 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	recursive_Fibonacci(F);
+	uint64_t ms6 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	std::cout << "F1 " << ms6 - ms5 << std::endl;
+	
+	// Concurrent Fibonacci sequence
+	uint64_t ms7 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	recursive_Fibonacci_c(F, threads_num);
+	int result = shared_value;
+	uint64_t ms8 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	std::cout << "F2 " << ms8 - ms7 << std::endl;
+
+	// CPU-bound
+
+	// Function foo() does some complex calculations sequentially
 	uint64_t ms1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	std::cout << "result1 = " << foo(NUM) << std::endl;
 	uint64_t ms2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	std::cout << ms2 - ms1 << std::endl;
 
+	// Function foo_c does same calculations as foo() but in 8 threads.
 	uint64_t ms3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	std::cout << "result2 = " << foo_c(NUM) << std::endl;
 	uint64_t ms4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
