@@ -3,8 +3,10 @@
 #include <thread>
 #include <atomic>
 #include <math.h>
+#include <fstream>
+#include <sstream>
 
-#define NUM 100
+#define NUM 100000000
 
 size_t foo(int num)
 {
@@ -23,9 +25,6 @@ size_t foo(int num)
 
 int foo_c(int num)
 {
-	const int num_threads = 8;
-	std::thread array_t[num_threads];
-	
 	std::thread t1(foo, num / 8);
 	std::thread t2(foo, num / 8);
 	std::thread t3(foo, num / 8);
@@ -84,9 +83,66 @@ void recursive_Fibonacci_c(int n, int num_t)
 	}
 }
 
+void read()
+{
+	std::ifstream fin;
+	fin.open("foo.txt");
+	fin.seekg(10);
+	char buffer[400000 + 1];
+	fin.read(buffer, 400000);
+	buffer[400000] = 0;
+	std::istringstream iss(buffer);
+}
+
+void read_c()
+{
+	std::ifstream fin;
+	fin.open("foo.txt");
+	fin.seekg(10);
+	char buffer[400000/8 + 1];
+	fin.read(buffer, 400000/8);
+	buffer[400000/8] = 0;
+	std::istringstream iss(buffer);
+	//for (std::string s; iss >> s; ) std::cout << s << '\n';
+}
+
+void r()
+{
+	std::thread t1(read_c);
+	std::thread t2(read_c);
+	std::thread t3(read_c);
+	std::thread t4(read_c);
+	std::thread t5(read_c);
+	std::thread t6(read_c);
+	std::thread t7(read_c);
+	std::thread t8(read_c);
+
+	t1.join();
+	t2.join();
+	t3.join();
+	t4.join();
+	t5.join();
+	t6.join();
+	t7.join();
+	t8.join();
+}
+
 int main()
 {
 	int threads_num = std::thread::hardware_concurrency();
+	
+	// IO bound. Read whole file and read 1/8 of file (8 threads)
+
+	uint64_t ms9 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	read();
+	uint64_t ms10 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	std::cout << "R1 " << ms10 - ms9 << std::endl;
+
+	uint64_t ms11 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	r();
+	uint64_t ms12 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	std::cout << "R2 " << ms12 - ms11 << std::endl;
+
 	// Memory-bound
 
 	// Sequential Fibonacci sequence
@@ -103,19 +159,20 @@ int main()
 	uint64_t ms8 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	std::cout << "F2 " << ms8 - ms7 << std::endl;
 
+	
 	// CPU-bound
 
 	// Function foo() does some complex calculations sequentially
 	uint64_t ms1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	std::cout << "result1 = " << foo(NUM) << std::endl;
+	foo(NUM);
 	uint64_t ms2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	std::cout << ms2 - ms1 << std::endl;
+	std::cout << "C1 " << ms2 - ms1 << std::endl;
 
 	// Function foo_c does same calculations as foo() but in 8 threads.
 	uint64_t ms3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	std::cout << "result2 = " << foo_c(NUM) << std::endl;
+	foo_c(NUM);
 	uint64_t ms4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	std::cout << ms4 - ms3 << std::endl;
+	std::cout << "C2 " << ms4 - ms3 << std::endl;
 
 	return 0;
 }
