@@ -87,35 +87,32 @@ void read()
 {
 	std::ifstream fin;
 	fin.open("foo.txt");
-	fin.seekg(10);
-	char buffer[400000 + 1];
-	fin.read(buffer, 400000);
-	buffer[400000] = 0;
-	std::istringstream iss(buffer);
+	fin.seekg(0);
+	char* buffer = new char[499999999 + 1];
+	fin.read(buffer, 499999999);
+	buffer[499999999] = 0;
 }
 
-void read_c()
+void read_c(int seek)
 {
 	std::ifstream fin;
 	fin.open("foo.txt");
-	fin.seekg(10);
-	char buffer[400000/8 + 1];
-	fin.read(buffer, 400000/8);
-	buffer[400000/8] = 0;
-	std::istringstream iss(buffer);
-	//for (std::string s; iss >> s; ) std::cout << s << '\n';
+	fin.seekg(seek);
+	char* buffer = new char[499999999 /8 + 1];
+	fin.read(buffer, 499999999 /8);
+	buffer[499999999 /8] = 0;
 }
 
 void r()
 {
-	std::thread t1(read_c);
-	std::thread t2(read_c);
-	std::thread t3(read_c);
-	std::thread t4(read_c);
-	std::thread t5(read_c);
-	std::thread t6(read_c);
-	std::thread t7(read_c);
-	std::thread t8(read_c);
+	std::thread t1(read_c, 0);
+	std::thread t2(read_c, 50000);
+	std::thread t3(read_c, 100000);
+	std::thread t4(read_c, 150000);
+	std::thread t5(read_c, 200000);
+	std::thread t6(read_c, 250000);
+	std::thread t7(read_c, 300000);
+	std::thread t8(read_c, 350000);
 
 	t1.join();
 	t2.join();
