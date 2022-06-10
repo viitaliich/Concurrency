@@ -38,8 +38,6 @@ void Unit::Move(std::vector<int>* array, int p, int N)
 {
 	//printf("\n@@@ = %d", P);
 	
-	if(((*array)[mPosition])>0)
-	{
 		CRITICAL_SECTION m_CriticalSection;
 		InitializeCriticalSection(&m_CriticalSection);
 		EnterCriticalSection(&m_CriticalSection);
@@ -50,11 +48,11 @@ void Unit::Move(std::vector<int>* array, int p, int N)
 
 		//printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@=%d", P);
 
-		if (P < p || mPosition == N-1)
+		if ((P <= p || mPosition == N-1) && mPosition-1 >= 0)
 		{
 			mPosition--;
 		}
-		else if(P > p || mPosition == 0)
+		else if((P > p || mPosition == 0) && mPosition+1 < N)
 		{
 			mPosition++;
 		}
@@ -66,7 +64,6 @@ void Unit::Move(std::vector<int>* array, int p, int N)
 		DeleteCriticalSection(&m_CriticalSection);
 		//Log(*array, N, 99);
 
-	}
 
 
 }
@@ -97,7 +94,6 @@ int main()
 
 	int p = 30;
 
-	int iter = 0;
 
 	std::vector<std::thread> threads;
 	std::vector<Unit*> units(K);
@@ -105,13 +101,14 @@ int main()
 	{
 		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 		std::minstd_rand0 generator(seed);
-
 		int random_variable = generator() % 100;
+
 		units[j] = new Unit(random_variable);
 		//std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
-	while (iter < 10)
+	int iter = 0;
+	while (iter < 5)
 	{
 		for (int i = 0; i < K; i++)
 		{
